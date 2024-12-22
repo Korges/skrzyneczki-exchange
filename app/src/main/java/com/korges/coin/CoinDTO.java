@@ -1,4 +1,4 @@
-package com.korges.cryptocurrency;
+package com.korges.coin;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

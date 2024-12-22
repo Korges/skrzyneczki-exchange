@@ -1,4 +1,4 @@
-package com.korges.cryptocurrency;
+package com.korges.coin;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Entity;

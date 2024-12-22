@@ -1,4 +1,4 @@
-package com.korges.cryptocurrency;
+package com.korges.coin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
