@@ -16,6 +16,7 @@ public class Coin {
     private String id;
     private String symbol;
     private String name;
+    private String image;
     @Transient
     private BigDecimal currentPrice;
     private BigDecimal marketCap;
@@ -49,6 +50,14 @@ public class Coin {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 
     public BigDecimal getCurrentPrice() {

@@ -6,5 +6,5 @@ import com.korges.coin.Coin;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public record BalanceDTO(UUID id, Account account, Coin coin, BigDecimal balance) {
+record BalanceDTO(UUID id, Account account, Coin coin, BigDecimal balance) {
 }

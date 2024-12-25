@@ -10,6 +10,7 @@ CREATE TABLE coin (
     id                 VARCHAR(50) PRIMARY KEY,
     symbol VARCHAR(50),
     name VARCHAR(50),
+    image VARCHAR,
     market_cap         DECIMAL,
     market_cap_rank    NUMERIC,
     circulating_supply DECIMAL,

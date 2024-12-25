@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Prices</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #crypto-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #crypto-list li {
+            display: flex;                  /* Set display to flex */
+            align-items: center;            /* Vertically center the content */
+            justify-content: start;         /* Align content to the left horizontally */
+            margin-bottom: 10px;            /* Space between list items */
+            padding: 10px;
+        }
+
+        #crypto-list li img {
+            height: 40px;                   /* Set the height of the image */
+            width: auto;                    /* Keep the aspect ratio */
+            margin-right: 10px;             /* Space between image and text */
+        }
+
+        #crypto-list li span {
+            flex-grow: 1;                   /* Ensure the text takes remaining space */
+        }
+    </style>
+</head>
+<body>
+<h1>Cryptocurrency Prices</h1>
+<ul id="crypto-list">Waiting for prices...</ul>
+
+<script>
+    const cryptoList = document.getElementById('crypto-list');
+    let cryptocurrencyList = [];
+
+    fetch('http://localhost:8080/cryptocurrency', {
+        method: 'GET',
+        mode: 'no-cors'
+    })
+    .then(response => {
+        // Check if the response is successful
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();  // Parse the JSON from the response
+    })
+    .then(data => {
+        // const jsonResponse = JSON.parse(data.body);
+        cryptoList.innerHTML = '';
+
+        cryptocurrencyList = data.map(x => new Cryptocurrency(
+            x.id,
+            x.symbol,
+            x.name,
+            x.image,
+            x.currentPrice,
+            x.marketCap,
+            x.marketCapRank
+        )).sort((a, b) => a.marketCapRank - b.marketCapRank);
+
+        cryptocurrencyList.forEach((cryptocurrency) => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = cryptocurrency.getCryptocurrencyListItem();
+            cryptoList.appendChild(listItem);
+        });
+    })
+    .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+    });
+
+    const socket = new SockJS("http://localhost:8080/ws");
+    const stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, () => {
+        stompClient.subscribe("/topic/crypto-prices", (message) => {
+            const prices = JSON.parse(message.body);
+            cryptoList.innerHTML = '';
+
+            prices.map(x => new SimpleCryptocurrency(x.id, x.currentPrice, x.marketCap, x.marketCapRank))
+                .sort((a, b) => a.marketCapRank - b.marketCapRank)
+                .forEach((cryptocurrency) => {
+                    let crypto = cryptocurrencyList.find(x => x.id = cryptocurrency.id);
+                    crypto.currentPrice = cryptocurrency.currentPrice
+            });
+
+            cryptocurrencyList.forEach((cryptocurrency) => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = cryptocurrency.getCryptocurrencyListItem();
+                cryptoList.appendChild(listItem);
+            });
+        });
+    });
+
+    class Cryptocurrency {
+        constructor(id, symbol, name, image, currentPrice, marketCap, marketCapRank) {
+                this.id = id;
+                this.symbol = symbol;
+                this.name = name;
+                this.image = image;
+                this.currentPrice = currentPrice;
+                this.marketCap = marketCap;
+                this.marketCapRank = marketCapRank;
+        };
+
+        getCryptocurrencyListItem() {
+            return `#${this.marketCapRank} <img src="${this.image}" alt="${this.id}" style="width: 30px; height: 30px;"> ${this.name} ${this.symbol.toUpperCase()} - Price: ${this.currentPrice}, Market Cap: ${this.currentPrice}`;
+        }
+    }
+
+    class SimpleCryptocurrency {
+        constructor(id, currentPrice, marketCap, marketCapRank) {
+            this.id = id;
+            this.currentPrice = currentPrice;
+            this.marketCap = marketCap;
+            this.marketCapRank = marketCapRank;
+        };
+    }
+</script>
+</body>
+</html>
