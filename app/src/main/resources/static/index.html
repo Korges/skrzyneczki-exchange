@@ -118,7 +118,7 @@
         };
 
         getCryptocurrencyListItem() {
-            return `#${this.marketCapRank} <img src="${this.image}" alt="${this.id}" style="width: 30px; height: 30px;"> ${this.name} ${this.symbol.toUpperCase()} - Price: ${this.currentPrice}, Market Cap: ${this.currentPrice}`;
+            return `#${this.marketCapRank} <img src="${this.image}" alt="${this.id}" style="width: 30px; height: 30px;"> ${this.name} ${this.symbol.toUpperCase()} - Price: ${this.currentPrice}, Market Cap: ${this.marketCap}`;
         }
     }
 

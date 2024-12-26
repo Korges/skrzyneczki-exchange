@@ -1,14 +1,15 @@
 package com.korges.coin;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.korges.coin.dto.CoinLiveUpdateDTO;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ class CoinRedisCacheService {
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
         this.objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         initializeCoinTable();
     }
 
@@ -40,13 +42,8 @@ class CoinRedisCacheService {
         Object result = this.redisTemplate.opsForValue().get(COIN_LIST_KEY);
         List<String> idList = result != null ? (List<String>) result : List.of();
         try {
-            List<CoinDTO> priceList = fetchPriceFromAPI(idList);
+            List<CoinLiveUpdateDTO> priceList = fetchPriceFromAPI(idList);
             priceList.forEach(this::updatePriceInCache);
-            System.out.println("Bitcoin currentPrice: " + priceList.stream()
-                    .filter(x -> x.id().equals("bitcoin"))
-                    .map(x -> x.currentPrice().toString())
-                    .findFirst()
-                    .orElseGet(() -> "..."));
             messagingTemplate.convertAndSend("/topic/crypto-prices", priceList);
         } catch (Exception e) {
             e.printStackTrace();
@@ -62,7 +59,7 @@ class CoinRedisCacheService {
         return (Number) this.redisTemplate.opsForHash().get(COIN_PRICE_KEY, id);
     }
 
-    void updatePriceInCache(CoinDTO coinDTO) {
+    void updatePriceInCache(CoinLiveUpdateDTO coinDTO) {
         this.redisTemplate.opsForHash().put(COIN_PRICE_KEY, coinDTO.id(), coinDTO.currentPrice());
     }
 
@@ -79,24 +76,15 @@ class CoinRedisCacheService {
         }
     }
 
-    private List<CoinDTO> fetchPriceFromAPI(List<String> idList) {
+    private List<CoinLiveUpdateDTO> fetchPriceFromAPI(List<String> idList) {
         try {
             HttpResponse<String> response = httpService.getCoinPriceByIds(idList);
+            System.out.println(response.headers());
             List<Map<String, Object>> prices = objectMapper.readValue(response.body(), List.class);
-
-            return prices.stream().map(x -> new CoinDTO((String) x.get("id"), mapCurrentPrice(x.get("current_price")))).toList();
+            return prices.stream().map(x -> objectMapper.convertValue(x, CoinLiveUpdateDTO.class)).toList();
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException();
         }
-    }
-
-    private BigDecimal mapCurrentPrice(Object currentPrice) {
-        BigDecimal price = (currentPrice instanceof String) ? new BigDecimal((String) currentPrice)
-                : (currentPrice instanceof Integer) ? new BigDecimal((Integer) currentPrice)
-                : (currentPrice instanceof Double) ? BigDecimal.valueOf((Double) currentPrice)
-                : BigDecimal.ZERO;
-
-        return price;
     }
 }

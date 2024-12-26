@@ -1,9 +1,9 @@
-package com.korges.coin;
+package com.korges.coin.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-record CoinDTO(
+public record CoinDTO(
         String id,
         String symbol,
         String name,
@@ -18,10 +18,5 @@ record CoinDTO(
         LocalDateTime athDate,
         LocalDateTime lastUpdated
 ) {
-    public CoinDTO {
-    }
 
-    public CoinDTO(String id, BigDecimal currentPrice) {
-        this(id, null, null, null, currentPrice, null, null, null, null, null, null, null, null);
-    }
 }
